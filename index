@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Busca Rápida no JSON</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    input, button { padding: 8px; margin: 5px 0; width: 300px; }
+    pre { background: #f4f4f4; padding: 10px; border-radius: 5px; max-height: 400px; overflow: auto; }
+  </style>
+</head>
+<body>
+  <h2>Busca Rápida no JSON</h2>
+  <input type="text" id="searchTerm" placeholder="Digite o termo para buscar...">
+  <button onclick="search()">Buscar</button>
+  <pre id="result">Resultados aparecerão aqui...</pre>
+
+  <script>
+    const jsonUrl = 'https://drive.google.com/uc?export=download&id=SEU_ID_AQUI'; // Substitua pelo ID real do seu arquivo
+
+    let jsonData = [];
+
+    // Carrega o JSON uma vez ao abrir a página
+    async function carregarJSON() {
+      try {
+        const response = await fetch(jsonUrl);
+        jsonData = await response.json();
+        console.log('JSON carregado com sucesso');
+      } catch (error) {
+        document.getElementById('result').textContent = 'Erro ao carregar JSON: ' + error;
+      }
+    }
+
+    // Função de busca
+    function search() {
+      const termo = document.getElementById('searchTerm').value.trim().toLowerCase();
+      if (!termo) {
+        document.getElementById('result').textContent = 'Digite um termo para buscar.';
+        return;
+      }
+
+      const resultados = [];
+
+      jsonData.forEach(aba => {
+        const correspondencias = [];
+
+        aba.linhas.forEach(linha => {
+          const linhaTexto = linha.join(' ').toLowerCase();
+          if (linhaTexto.includes(termo)) {
+            correspondencias.push(linha);
+          }
+        });
+
+        if (correspondencias.length > 0) {
+          resultados.push({
+            aba: aba.aba,
+            colunas: aba.colunas,
+            resultados: correspondencias
+          });
+        }
+      });
+
+      document.getElementById('result').textContent = 
+        JSON.stringify(resultados.length ? resultados : 'Nada encontrado', null, 2);
+    }
+
+    // Carregar JSON assim que a página abre
+    carregarJSON();
+  </script>
+</body>
+</html>
