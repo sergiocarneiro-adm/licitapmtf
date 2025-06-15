@@ -16,12 +16,11 @@
   <pre id="result">Resultados aparecerão aqui...</pre>
 
   <script>
-    // Substitua 'SEU_USUARIO' e 'NOME_REPOSITORIO' conforme seu repositório real
-    const jsonUrl = 'https://github.com/sergiocarneiro-adm/licitapmtf/blob/main/dados_planilha.json';
+    // Usando o JSON diretamente do seu GitHub Pages
+    const jsonUrl = 'https://sergiocarneiro-adm.github.io/licitapmtf/dados_planilha.json';
 
     let jsonData = [];
 
-    // Carrega o JSON uma vez ao abrir a página
     async function carregarJSON() {
       try {
         const response = await fetch(jsonUrl);
@@ -32,7 +31,6 @@
       }
     }
 
-    // Função de busca
     function search() {
       const termo = document.getElementById('searchTerm').value.trim().toLowerCase();
       if (!termo) {
@@ -65,7 +63,6 @@
         JSON.stringify(resultados.length ? resultados : 'Nada encontrado', null, 2);
     }
 
-    // Carregar JSON assim que a página abre
     carregarJSON();
   </script>
 </body>
