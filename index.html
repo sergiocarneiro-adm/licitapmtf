@@ -12,7 +12,7 @@
       padding: 20px;
     }
     .container {
-      max-width: 800px;
+      max-width: 900px;
       margin: auto;
     }
     h2 {
@@ -20,7 +20,8 @@
       text-align: center;
     }
     .card {
-      margin-bottom: 15px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
     .search-box {
       display: flex;
@@ -29,6 +30,18 @@
     }
     .search-box input {
       flex: 1;
+    }
+    table {
+      width: 100%;
+      margin-top: 10px;
+    }
+    th, td {
+      padding: 8px;
+      border: 1px solid #dee2e6;
+    }
+    th {
+      background-color: #007bff;
+      color: white;
     }
   </style>
 </head>
@@ -99,15 +112,20 @@
               <strong>Aba:</strong> ${item.aba}
             </div>
             <div class="card-body">
-              <strong>Colunas:</strong> ${item.colunas.join(', ')}<br><br>
-              <strong>Resultados:</strong><br>
-              <ul>
+              <div class="table-responsive">
+                <table class="table table-bordered">
+                  <thead>
+                    <tr>${item.colunas.map(col => `<th>${col}</th>`).join('')}</tr>
+                  </thead>
+                  <tbody>
         `;
         item.resultados.forEach(res => {
-          cardHTML += `<li>${res.join(' | ')}</li>`;
+          cardHTML += `<tr>${res.map(dado => `<td>${dado}</td>`).join('')}</tr>`;
         });
         cardHTML += `
-              </ul>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         `;
