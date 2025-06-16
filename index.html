@@ -10,7 +10,6 @@
       font-family: 'Roboto', sans-serif;
       background-color: #f8f9fa;
       padding: 20px;
-      overflow-x: hidden;
     }
     .container {
       max-width: 900px;
@@ -70,11 +69,13 @@
       resultDiv.innerHTML = '<div class="alert alert-info">Carregando dados...</div>';
       try {
         const response = await fetch(jsonUrl);
+        if (!response.ok) throw new Error('HTTP ' + response.status);
         jsonData = await response.json();
         resultDiv.innerHTML = '<div class="alert alert-success">Dados carregados. Pronto para buscar.</div>';
-        console.log('JSON carregado com sucesso');
+        console.log('JSON carregado com sucesso:', jsonData);
       } catch (error) {
         resultDiv.innerHTML = '<div class="alert alert-danger">Erro ao carregar JSON: ' + error + '</div>';
+        console.error('Erro ao carregar JSON:', error);
       }
     }
 
@@ -107,6 +108,8 @@
         return;
       }
 
+      console.log('Buscando termo:', termo);
+
       const resultados = [];
 
       jsonData.forEach(aba => {
@@ -116,6 +119,7 @@
           const linhaTexto = linha.join(' ').toLowerCase();
           if (linhaTexto.includes(termo)) {
             correspondencias.push(linha);
+            console.log(`Encontrado na aba "${aba.aba}":`, linha);
           }
         });
 
@@ -130,6 +134,7 @@
 
       if (resultados.length === 0) {
         resultDiv.innerHTML = '<div class="alert alert-info">Nada encontrado.</div>';
+        console.log('Nenhum resultado encontrado.');
         return;
       }
 
