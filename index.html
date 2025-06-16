@@ -120,6 +120,7 @@
       if (s.includes('fracassado')) return `<span class="badge bg-danger">${escapeHtml(status)}</span>`;
       if (s.includes('revogado')) return `<span class="badge bg-secondary">${escapeHtml(status)}</span>`;
       if (s.includes('homologado') || s.includes('aprovado')) return `<span class="badge bg-success">${escapeHtml(status)}</span>`;
+      if (s.includes('deserto')) return `<span class="badge bg-warning text-dark">${escapeHtml(status)}</span>`;
       return escapeHtml(status);
     }
 
