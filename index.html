@@ -76,8 +76,9 @@
       }
     }
 
-    // Escapa caracteres HTML para evitar problemas ao colocar no innerHTML
+    // Garante que o texto é string antes de escapar caracteres
     function escapeHtml(text) {
+      text = String(text);
       return text.replace(/[&<>"']/g, function(m) {
         switch (m) {
           case '&': return '&amp;';
@@ -90,8 +91,9 @@
       });
     }
 
-    // Destaque do termo, case insensitive, com regex
+    // Destaca termo pesquisado, case insensitive
     function highlightTerm(text, termo) {
+      text = String(text);
       if (!termo) return escapeHtml(text);
       const escapedText = escapeHtml(text);
       const regex = new RegExp(`(${termo.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')})`, 'gi');
@@ -166,10 +168,10 @@
       });
     }
 
-    // Busca ao apertar Enter no campo de texto
+    // Busca ao pressionar Enter no input
     document.getElementById('searchTerm').addEventListener('keydown', function(e) {
       if (e.key === 'Enter') {
-        e.preventDefault(); // evita submit se estiver dentro de form
+        e.preventDefault();
         search();
       }
     });
