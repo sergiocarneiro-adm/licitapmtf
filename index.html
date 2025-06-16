@@ -67,14 +67,16 @@
     async function carregarJSON() {
       try {
         const response = await fetch(jsonUrl);
+        if (!response.ok) throw new Error('HTTP ' + response.status);
         jsonData = await response.json();
-        console.log('JSON carregado com sucesso');
+        console.log('JSON carregado:', jsonData);
       } catch (error) {
         document.getElementById('result').innerHTML = '<div class="alert alert-danger">Erro ao carregar JSON: ' + error + '</div>';
+        console.error('Erro ao carregar JSON:', error);
       }
     }
 
-    // Função para escapar caracteres HTML e evitar quebra no highlight
+    // Escapa caracteres HTML para evitar problemas ao colocar no innerHTML
     function escapeHtml(text) {
       return text.replace(/[&<>"']/g, function(m) {
         switch (m) {
@@ -88,15 +90,17 @@
       });
     }
 
-    // Função que adiciona <mark> no termo pesquisado, ignorando caixa (case insensitive)
+    // Destaque do termo, case insensitive, com regex
     function highlightTerm(text, termo) {
+      if (!termo) return escapeHtml(text);
       const escapedText = escapeHtml(text);
       const regex = new RegExp(`(${termo.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')})`, 'gi');
       return escapedText.replace(regex, '<mark>$1</mark>');
     }
 
     function search() {
-      const termo = document.getElementById('searchTerm').value.trim().toLowerCase();
+      const termoInput = document.getElementById('searchTerm');
+      const termo = termoInput.value.trim().toLowerCase();
       const resultDiv = document.getElementById('result');
       resultDiv.innerHTML = '';
 
@@ -104,6 +108,8 @@
         resultDiv.innerHTML = '<div class="alert alert-warning">Digite um termo para buscar.</div>';
         return;
       }
+
+      console.log('Buscando termo:', termo);
 
       const resultados = [];
 
@@ -128,6 +134,7 @@
 
       if (resultados.length === 0) {
         resultDiv.innerHTML = '<div class="alert alert-info">Nada encontrado.</div>';
+        console.log('Nenhum resultado encontrado.');
         return;
       }
 
@@ -135,13 +142,13 @@
         let cardHTML = `
           <div class="card">
             <div class="card-header bg-primary text-white">
-              <strong>Aba:</strong> ${item.aba}
+              <strong>Aba:</strong> ${escapeHtml(item.aba)}
             </div>
             <div class="card-body">
               <div class="table-responsive">
                 <table class="table table-bordered">
                   <thead>
-                    <tr>${item.colunas.map(col => `<th>${col}</th>`).join('')}</tr>
+                    <tr>${item.colunas.map(col => `<th>${escapeHtml(col)}</th>`).join('')}</tr>
                   </thead>
                   <tbody>
         `;
@@ -159,9 +166,10 @@
       });
     }
 
-    // Captura o Enter no input para disparar a busca
-    document.getElementById('searchTerm').addEventListener('keypress', function(e) {
+    // Busca ao apertar Enter no campo de texto
+    document.getElementById('searchTerm').addEventListener('keydown', function(e) {
       if (e.key === 'Enter') {
+        e.preventDefault(); // evita submit se estiver dentro de form
         search();
       }
     });
