@@ -10,6 +10,7 @@
       font-family: 'Roboto', sans-serif;
       background-color: #f8f9fa;
       padding: 20px;
+      overflow-x: hidden;
     }
     .container {
       max-width: 900px;
@@ -38,10 +39,15 @@
     th, td {
       padding: 8px;
       border: 1px solid #dee2e6;
+      vertical-align: top;
     }
     th {
       background-color: #007bff;
       color: white;
+    }
+    mark {
+      background-color: yellow;
+      padding: 0 2px;
     }
   </style>
 </head>
@@ -60,13 +66,21 @@
     let jsonData = [];
 
     async function carregarJSON() {
+      const resultDiv = document.getElementById('result');
+      resultDiv.innerHTML = '<div class="alert alert-info">Carregando dados...</div>';
       try {
         const response = await fetch(jsonUrl);
         jsonData = await response.json();
+        resultDiv.innerHTML = '<div class="alert alert-success">Dados carregados. Pronto para buscar.</div>';
         console.log('JSON carregado com sucesso');
       } catch (error) {
-        document.getElementById('result').innerHTML = '<div class="alert alert-danger">Erro ao carregar JSON: ' + error + '</div>';
+        resultDiv.innerHTML = '<div class="alert alert-danger">Erro ao carregar JSON: ' + error + '</div>';
       }
+    }
+
+    function highlightTerm(text, termo) {
+      const regex = new RegExp(`(${termo})`, 'gi');
+      return text.replace(regex, '<mark>$1</mark>');
     }
 
     function search() {
@@ -109,7 +123,7 @@
         let cardHTML = `
           <div class="card">
             <div class="card-header bg-primary text-white">
-              <strong>Aba:</strong> ${item.aba}
+              <strong>Pregão:</strong> ${item.aba}
             </div>
             <div class="card-body">
               <div class="table-responsive">
@@ -120,7 +134,7 @@
                   <tbody>
         `;
         item.resultados.forEach(res => {
-          cardHTML += `<tr>${res.map(dado => `<td>${dado}</td>`).join('')}</tr>`;
+          cardHTML += `<tr>${res.map(dado => `<td>${highlightTerm(dado, termo)}</td>`).join('')}</tr>`;
         });
         cardHTML += `
                   </tbody>
@@ -132,6 +146,12 @@
         resultDiv.innerHTML += cardHTML;
       });
     }
+
+    document.getElementById('searchTerm').addEventListener('keypress', function (e) {
+      if (e.key === 'Enter') {
+        search();
+      }
+    });
 
     carregarJSON();
   </script>
