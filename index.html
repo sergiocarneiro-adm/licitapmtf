@@ -206,23 +206,39 @@
 
       resultados.forEach(item => {
         let cardHTML = `
-          <div class="card">
-            <div class="card-header bg-primary text-white">
-              <strong>Pregão:</strong> ${escapeHtml(item.aba)}
-            </div>
-            <div class="card-body">
-              <div class="table-responsive">
-                <table class="table table-bordered table-hover">
-                  <thead>
-                    <tr>${item.colunas.map(col => `<th>${escapeHtml(col)}</th>`).join('')}</tr>
-                  </thead>
-                  <tbody>
-        `;
+              <div class="card">
+                <div class="card-header bg-primary text-white">
+                  <strong>Pregão:</strong> ${escapeHtml(item.aba)}
+                </div>
+                <div class="card-body">
+                  <div class="table-responsive">
+                    <table class="table table-bordered table-hover">
+                      <thead>
+                        <tr>${item.colunas.map(col => `<th>${escapeHtml(col)}</th>`).join('')}</tr>
+                      </thead>
+                      <tbody>
+            `;
 
         item.resultados.forEach(res => {
           cardHTML += '<tr>' + res.map((dado, i) => {
-            const coluna = item.colunas[i]?.toLowerCase();
-            return `<td>${coluna?.includes('status') ? formatStatus(dado) : highlightTerm(dado, termo)}</td>`;
+            const coluna = item.colunas[i];
+            let dadoFormatado = highlightTerm(dado, termo);
+
+            // Verifica se a coluna é 'Vl. Unit.' ou 'Vl. Total' (ignorando maiúsculas/minúsculas e acentos para segurança)
+            if (coluna && (coluna.toLowerCase().includes('vl. unit') || coluna.toLowerCase().includes('vl. total'))) {
+              // Tenta converter para número e formatar como moeda
+              const valorNumerico = parseFloat(String(dado).replace(',', '.')); // Garante que dado é string antes de replace
+              if (!isNaN(valorNumerico)) {
+                dadoFormatado = `R$ ${valorNumerico.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                // Se houver termo de busca, destaque-o mesmo no formato monetário
+                if (termo && dadoFormatado.toLowerCase().includes(termo)) {
+                  dadoFormatado = highlightTerm(dadoFormatado, termo);
+                }
+              }
+            } else if (coluna && coluna.toLowerCase().includes('status')) {
+              dadoFormatado = formatStatus(dado);
+            }
+            return `<td>${dadoFormatado}</td>`;
           }).join('') + '</tr>';
         });
 
