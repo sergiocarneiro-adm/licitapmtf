@@ -105,6 +105,23 @@
             color: white;
             font-size: 1.3rem;
         }
+
+        /* ✅ Marca d'água */
+        .footer-watermark {
+            position: fixed;
+            bottom: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.85rem;
+            color: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            pointer-events: none;
+            user-select: none;
+        }
+
+        body.dark-mode .footer-watermark {
+            color: rgba(255, 255, 255, 0.3);
+        }
     </style>
 </head>
 <body>
@@ -139,6 +156,11 @@
     </div>
 
     <button id="btnTopo" title="Voltar ao topo">↑</button>
+
+    <!-- ✅ Marca d'água -->
+    <div class="footer-watermark">
+        &copy; desenvolvido por Sérgio Carneiro
+    </div>
 
     <script>
         const jsonUrl = 'https://sergiocarneiro-adm.github.io/licitapmtf/dados_planilha.json';
@@ -205,11 +227,8 @@
             }
 
             resultados.forEach(item => {
-                // MODIFICAÇÃO AQUI: Formatar o nome da aba
                 const nomeAbaCompleto = item.aba;
                 let nomeAbaFormatado = escapeHtml(nomeAbaCompleto);
-
-                // Divide a string pelo '_' e pega as duas primeiras partes
                 const partesNome = nomeAbaCompleto.split('_');
                 if (partesNome.length >= 2) {
                     nomeAbaFormatado = escapeHtml(`${partesNome[0]}_${partesNome[1]}`);
@@ -234,13 +253,10 @@
                         const coluna = item.colunas[i];
                         let dadoFormatado = highlightTerm(dado, termo);
 
-                        // Verifica se a coluna é 'Vl. Unit.' ou 'Vl. Total' (ignorando maiúsculas/minúsculas e acentos para segurança)
                         if (coluna && (coluna.toLowerCase().includes('vl. unit') || coluna.toLowerCase().includes('vl. total'))) {
-                            // Tenta converter para número e formatar como moeda
-                            const valorNumerico = parseFloat(String(dado).replace(',', '.')); // Garante que dado é string antes de replace
+                            const valorNumerico = parseFloat(String(dado).replace(',', '.'));
                             if (!isNaN(valorNumerico)) {
                                 dadoFormatado = `R$ ${valorNumerico.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-                                // Se houver termo de busca, destaque-o mesmo no formato monetário
                                 if (termo && dadoFormatado.toLowerCase().includes(termo)) {
                                     dadoFormatado = highlightTerm(dadoFormatado, termo);
                                 }
