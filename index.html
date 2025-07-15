@@ -106,7 +106,6 @@
             font-size: 1.3rem;
         }
 
-        /* ✅ Marca d'água */
         .footer-watermark {
             position: fixed;
             bottom: 5px;
@@ -127,9 +126,12 @@
 <body>
     <header class="d-flex justify-content-between align-items-center px-4">
         <h1>🔍 Licitações PMTF</h1>
-        <span class="theme-toggle" onclick="toggleTheme()" title="Alternar tema">
-            <i class="bi bi-moon-stars-fill"></i>
-        </span>
+        <div class="d-flex align-items-center gap-3">
+            <span class="text-white small">Atualizado até 15/07/2025</span>
+            <span class="theme-toggle" onclick="toggleTheme()" title="Alternar tema">
+                <i class="bi bi-moon-stars-fill"></i>
+            </span>
+        </div>
     </header>
 
     <div class="container-fluid">
@@ -157,7 +159,6 @@
 
     <button id="btnTopo" title="Voltar ao topo">↑</button>
 
-    <!-- ✅ Marca d'água -->
     <div class="footer-watermark">
         &copy; desenvolvido por Sérgio Carneiro
     </div>
