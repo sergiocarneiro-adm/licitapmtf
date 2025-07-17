@@ -238,7 +238,7 @@
                 let cardHTML = `
                     <div class="card">
                         <div class="card-header bg-primary text-white">
-                            <strong>Pregão:</strong> ${nomeAbaFormatado}
+                            <strong>Processo:</strong> ${nomeAbaFormatado}
                         </div>
                         <div class="card-body">
                             <div class="table-responsive">
@@ -273,7 +273,7 @@
                 resultDiv.innerHTML += cardHTML;
             });
 
-            resultDiv.innerHTML += `<div class="alert alert-success mt-3">🔎 ${resultados.length} pregões encontrados${anoSelecionado ? ' para o ano ' + anoSelecionado : ''}${termo ? ' com o termo "' + termo + '"' : ''}.</div>`;
+            resultDiv.innerHTML += `<div class="alert alert-success mt-3">🔎 ${resultados.length} processos encontrados${anoSelecionado ? ' para o ano ' + anoSelecionado : ''}${termo ? ' com o termo "' + termo + '"' : ''}.</div>`;
         }
 
         document.getElementById('searchTerm').addEventListener('keydown', e => {
