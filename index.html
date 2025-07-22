@@ -57,7 +57,7 @@
             align-items: center;
         }
 
-        .search-box input, .search-box select {
+        .search-box input {
             flex: 1;
             min-width: 200px;
         }
@@ -137,12 +137,11 @@
     <div class="container-fluid">
         <div class="search-box">
             <input type="text" id="searchTerm" class="form-control" placeholder="Ex: nistatina, 100.000 UI, PE25-25..." />
-            <select id="yearFilter" class="form-select" style="max-width: 150px;">
-                <option value="">Todos os anos</option>
-                <option value="2023">2023</option>
-                <option value="2024">2024</option>
-                <option value="2025">2025</option>
-            </select>
+            <div class="btn-group" role="group" aria-label="Filtro por ano" id="yearButtons">
+                <button type="button" class="btn btn-outline-primary" onclick="toggleYear('2023')">2023</button>
+                <button type="button" class="btn btn-outline-primary" onclick="toggleYear('2024')">2024</button>
+                <button type="button" class="btn btn-outline-primary" onclick="toggleYear('2025')">2025</button>
+            </div>
             <button onclick="search()" class="btn btn-primary">
                 <i class="bi bi-search"></i> Buscar
             </button>
@@ -166,6 +165,7 @@
     <script>
         const jsonUrl = 'https://sergiocarneiro-adm.github.io/licitapmtf/dados_planilha.json';
         let jsonData = [];
+        let anoSelecionado = '';
 
         async function carregarJSON() {
             document.getElementById('spinner').style.display = 'block';
@@ -202,9 +202,29 @@
             return escapeHtml(status);
         }
 
+        function toggleYear(ano) {
+            const botoes = document.querySelectorAll('#yearButtons button');
+            if (anoSelecionado === ano) {
+                anoSelecionado = '';
+            } else {
+                anoSelecionado = ano;
+            }
+
+            botoes.forEach(btn => {
+                if (btn.textContent === anoSelecionado) {
+                    btn.classList.remove('btn-outline-primary');
+                    btn.classList.add('btn-primary');
+                } else {
+                    btn.classList.add('btn-outline-primary');
+                    btn.classList.remove('btn-primary');
+                }
+            });
+
+            search();
+        }
+
         function search() {
             const termo = document.getElementById('searchTerm').value.trim().toLowerCase();
-            const anoSelecionado = document.getElementById('yearFilter').value;
             const resultDiv = document.getElementById('result');
             resultDiv.innerHTML = '';
 
