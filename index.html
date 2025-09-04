@@ -135,7 +135,6 @@ mark {
 body.dark-mode .footer-watermark {
     color: rgba(255, 255, 255, 0.3);
 }
-
     </style>
 </head>
 <body>
@@ -152,7 +151,7 @@ body.dark-mode .footer-watermark {
     <div class="container-fluid">
         <div class="search-box">
             <label for="searchTerm" class="visually-hidden">Termo de Busca</label>
-            <input type="text" id="searchTerm" class="form-control" placeholder="Ex: nistatina, 100.000 UI, PE25-25..." aria-label="Termo de busca" />
+            <input type="text" id="searchTerm" class="form-control" placeholder="Ex: de som, teclado usb, 100.000 UI" aria-label="Termo de busca" />
             <div class="btn-group" role="group" aria-label="Filtro por ano" id="yearButtons">
                 <button type="button" class="btn btn-outline-primary" data-year="2021">2021</button>
                 <button type="button" class="btn btn-outline-primary" data-year="2022">2022</button>
@@ -201,7 +200,7 @@ async function carregarJSON() {
         if (!response.ok) throw new Error('HTTP ' + response.status);
         jsonData = await response.json();
     } catch (error) {
-        resultDiv.innerHTML = `<div class="alert alert-danger">Erro ao carregar JSON: ${error.message}</div>`;
+        resultDiv.innerHTML = `<div class="alert alert-danger">Erro ao carregar JSON: ${escapeHtml(error.message)}</div>`;
     } finally {
         spinnerDiv.style.display = 'none';
     }
@@ -213,15 +212,33 @@ function escapeHtml(text) {
     });
 }
 
-function highlightTerm(text, termo) {
-    if (!termo) return escapeHtml(text);
-    const termos = termo.split(/\s+/).filter(Boolean);
-    const regex = new RegExp(`(${termos.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'gi');
+/**
+ * Destaca múltiplas frases exatas (separadas por vírgula) no texto.
+ * Ex.: "de som, teclado usb" -> destaca qualquer uma das duas frases.
+ */
+function highlightTerm(text, termosEntrada) {
+    if (!termosEntrada) return escapeHtml(text);
+
+    // Separa por vírgula, remove espaços extras e termos vazios
+    const termos = termosEntrada
+        .split(',')
+        .map(t => t.trim())
+        .filter(Boolean);
+
+    if (termos.length === 0) return escapeHtml(text);
+
+    // Escapa caracteres especiais de regex em cada termo
+    const termosEscapados = termos.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+
+    // Cria uma regex com OR entre as frases, case-insensitive e global
+    const regex = new RegExp('(' + termosEscapados.join('|') + ')', 'gi');
+
+    // Faz o replace sobre o HTML escapado para evitar XSS
     return escapeHtml(text).replace(regex, '<mark>$1</mark>');
 }
 
 function formatStatus(status) {
-    const s = status.toLowerCase();
+    const s = String(status).toLowerCase();
     if (s.includes('fracassado')) return `<span class="badge bg-danger">${escapeHtml(status)}</span>`;
     if (s.includes('revogado')) return `<span class="badge bg-secondary">${escapeHtml(status)}</span>`;
     if (s.includes('homologado') || s.includes('aprovado')) return `<span class="badge bg-success">${escapeHtml(status)}</span>`;
@@ -256,18 +273,31 @@ function toggleYear(event) {
 }
 
 function search() {
-    const termo = searchTermInput.value.trim().toLowerCase();
+    const termoOriginal = searchTermInput.value; // mantém como digitado (para destaque)
+    // termos normalizados para busca (lowercase)
+    const termosBusca = termoOriginal
+        .split(',')
+        .map(t => t.trim().toLowerCase())
+        .filter(Boolean);
+
     resultDiv.innerHTML = '';
 
-    if (!termo && !anoSelecionado) {
+    if (termosBusca.length === 0 && !anoSelecionado) {
         resultDiv.innerHTML = '<div class="alert alert-warning">Digite um termo ou selecione um ano para buscar.</div>';
         return;
     }
 
     const resultados = [];
     jsonData.forEach(aba => {
-        if (anoSelecionado && !aba.aba.includes(anoSelecionado)) return;
-        const correspondencias = aba.linhas.filter(linha => !termo || linha.join(' ').toLowerCase().includes(termo));
+        if (anoSelecionado && !String(aba.aba).includes(anoSelecionado)) return;
+
+        const correspondencias = aba.linhas.filter(linha => {
+            if (termosBusca.length === 0) return true; // quando só filtra por ano
+            const textoLinha = linha.join(' ').toLowerCase();
+            // Match por OU: se QUALQUER frase aparecer, entra
+            return termosBusca.some(t => textoLinha.includes(t));
+        });
+
         if (correspondencias.length > 0) {
             resultados.push({ aba: aba.aba, colunas: aba.colunas, resultados: correspondencias });
         }
@@ -281,7 +311,7 @@ function search() {
     resultados.forEach(item => {
         const nomeAbaCompleto = item.aba;
         let nomeAbaFormatado = escapeHtml(nomeAbaCompleto);
-        const partesNome = nomeAbaCompleto.split('_');
+        const partesNome = String(nomeAbaCompleto).split('_');
         if (partesNome.length >= 2) {
             nomeAbaFormatado = escapeHtml(`${partesNome[0]}_${partesNome[1]}`);
         }
@@ -303,19 +333,26 @@ function search() {
         item.resultados.forEach(res => {
             cardHTML += '<tr>' + res.map((dado, i) => {
                 const coluna = item.colunas[i];
-                let dadoFormatado = highlightTerm(dado, termo);
+                // Default: destacar termos/frases
+                let dadoFormatado = String(dado);
 
                 if (coluna && (coluna.toLowerCase().includes('vl. unit') || coluna.toLowerCase().includes('vl. total'))) {
-                    const valorNumerico = parseFloat(String(dado).replace(',', '.'));
+                    const valorNumerico = parseFloat(String(dado).replace('.', '').replace(',', '.'));
                     if (!isNaN(valorNumerico)) {
                         dadoFormatado = `R$ ${valorNumerico.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-                        if (termo && dadoFormatado.toLowerCase().includes(termo)) {
-                            dadoFormatado = highlightTerm(dadoFormatado, termo);
-                        }
+                        // aplica destaque nas frases (se alguma coincide com o texto formatado)
+                        dadoFormatado = highlightTerm(dadoFormatado, termoOriginal);
+                        return `<td>${dadoFormatado}</td>`;
                     }
-                } else if (coluna && coluna.toLowerCase().includes('status')) {
-                    dadoFormatado = formatStatus(dado);
                 }
+
+                if (coluna && coluna.toLowerCase().includes('status')) {
+                    // badge de status (não aplicar highlight aqui para não quebrar o HTML)
+                    return `<td>${formatStatus(dado)}</td>`;
+                }
+
+                // Demais colunas: destaque múltiplas frases
+                dadoFormatado = highlightTerm(dadoFormatado, termoOriginal);
                 return `<td>${dadoFormatado}</td>`;
             }).join('') + '</tr>';
         });
@@ -324,7 +361,11 @@ function search() {
         resultDiv.innerHTML += cardHTML;
     });
 
-    resultDiv.innerHTML += `<div class="alert alert-success mt-3">🔎 ${resultados.length} processos encontrados${anoSelecionado ? ' para o ano ' + anoSelecionado : ''}${termo ? ' com o termo "' + termo + '"' : ''}.</div>`;
+    // Mensagem de resumo
+    const resumoTermo = termosBusca.length > 0
+        ? ' com o(s) termo(s) "' + termosBusca.join('", "') + '"'
+        : '';
+    resultDiv.innerHTML += `<div class="alert alert-success mt-3">🔎 ${resultados.length} processos encontrados${anoSelecionado ? ' para o ano ' + anoSelecionado : ''}${resumoTermo}.</div>`;
 }
 
 function toggleTheme() {
@@ -357,4 +398,3 @@ carregarJSON();
     </script>
 </body>
 </html>
-
