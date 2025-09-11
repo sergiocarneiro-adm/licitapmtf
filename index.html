@@ -6,7 +6,6 @@
     <title>Busca de Dados - Licitações PMTF</title>
     
     <link rel="icon" href="favicon.ico" type="image/x-icon">
-
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
@@ -80,7 +79,10 @@ body.dark-mode .footer-watermark { color: rgba(255, 255, 255, 0.3); }
     </footer>
 
     <script>
-const jsonUrl = 'https://sergiocarneiro-adm.github.io/licitapmtf/dados_planilha.json';
+const jsonUrls = [
+    'https://sergiocarneiro-adm.github.io/licitapmtf/dados_planilha.json',
+    'https://sergiocarneiro-adm.github.io/licitapmtf/dados_dispensas.json' // segundo arquivo
+];
 let jsonData = [];
 let anoSelecionado = '';
 
@@ -96,9 +98,12 @@ const themeToggleBtn = document.querySelector('.theme-toggle');
 async function carregarJSON() {
     spinnerDiv.style.display = 'block';
     try {
-        const response = await fetch(jsonUrl);
-        if (!response.ok) throw new Error('HTTP ' + response.status);
-        jsonData = await response.json();
+        const responses = await Promise.all(jsonUrls.map(url => fetch(url)));
+        responses.forEach((res, i) => {
+            if (!res.ok) throw new Error(`Erro no arquivo ${i+1}: HTTP ${res.status}`);
+        });
+        const arrays = await Promise.all(responses.map(r => r.json()));
+        jsonData = arrays.flat();
     } catch (error) {
         resultDiv.innerHTML = `<div class="alert alert-danger">Erro ao carregar JSON: ${escapeHtml(error.message)}</div>`;
     } finally {
@@ -115,12 +120,6 @@ function removerAcentos(texto) {
     return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 
-// >>> INÍCIO DA MODIFICAÇÃO: Nova função de highlight
-/**
- * Destaca múltiplos termos de busca (separados por vírgula) em um texto,
- * ignorando acentos e capitalização, mas preservando o texto original.
- * Ex: buscar por "agua" vai destacar "água" no texto.
- */
 function highlightTerm(text, termosEntrada) {
     const originalText = String(text);
     if (!termosEntrada) return escapeHtml(originalText);
@@ -129,13 +128,11 @@ function highlightTerm(text, termosEntrada) {
     if (termos.length === 0) return escapeHtml(originalText);
 
     const removerAcentosInterno = (str) => str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-
     const termosEscapados = termos.map(t => 
         removerAcentosInterno(t).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
     );
 
     const regex = new RegExp('(' + termosEscapados.join('|') + ')', 'gi');
-    
     const textoNormalizado = removerAcentosInterno(originalText);
     let resultadoFinal = '';
     let ultimoIndice = 0;
@@ -154,7 +151,6 @@ function highlightTerm(text, termosEntrada) {
     resultadoFinal += escapeHtml(originalText.substring(ultimoIndice));
     return resultadoFinal;
 }
-// <<< FIM DA MODIFICAÇÃO
 
 function formatStatus(status) {
     const s = String(status).toLowerCase();
