@@ -9,6 +9,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
+    <!-- Bibliotecas para PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
 :root {
     --bg-light: #f8f9fa;
@@ -34,6 +36,22 @@ mark { background-color: #ffe58f; padding: 0 2px; }
 .theme-toggle { cursor: pointer; font-size: 1.3rem; }
 .footer-watermark { position: fixed; bottom: 5px; left: 50%; transform: translateX(-50%); font-size: 0.85rem; color: rgba(0, 0, 0, 0.5); z-index: 999; pointer-events: none; user-select: none; }
 body.dark-mode .footer-watermark { color: rgba(255, 255, 255, 0.3); }
+
+/* Estilos para PDF */
+.pdf-loading {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0,0,0,0.8);
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
     </style>
 </head>
 <body>
@@ -61,6 +79,9 @@ body.dark-mode .footer-watermark { color: rgba(255, 255, 255, 0.3); }
             <button id="searchButton" class="btn btn-primary" aria-label="Buscar">
                 <i class="bi bi-search"></i> Buscar
             </button>
+            <button id="exportPdf" class="btn btn-success" style="display: none;" aria-label="Exportar para PDF">
+                <i class="bi bi-file-earmark-pdf"></i> Exportar PDF
+            </button>
         </div>
 
         <div id="spinner" class="text-center" style="display:none;">
@@ -81,19 +102,20 @@ body.dark-mode .footer-watermark { color: rgba(255, 255, 255, 0.3); }
     <script>
 const jsonUrls = [
     'https://sergiocarneiro-adm.github.io/licitapmtf/dados_planilha.json',
-    'https://sergiocarneiro-adm.github.io/licitapmtf/dados_dispensas.json' // segundo arquivo
+    'https://sergiocarneiro-adm.github.io/licitapmtf/dados_dispensas.json'
 ];
 let jsonData = [];
 let anoSelecionado = '';
 
 // Referências aos elementos DOM
-const searchTermInput = document.getElementById('searchTerm' );
+const searchTermInput = document.getElementById('searchTerm');
 const yearButtonsDiv = document.getElementById('yearButtons');
 const searchButton = document.getElementById('searchButton');
 const spinnerDiv = document.getElementById('spinner');
 const resultDiv = document.getElementById('result');
 const btnTopo = document.getElementById('btnTopo');
 const themeToggleBtn = document.querySelector('.theme-toggle');
+const exportPdfBtn = document.getElementById('exportPdf');
 
 async function carregarJSON() {
     spinnerDiv.style.display = 'block';
@@ -112,7 +134,7 @@ async function carregarJSON() {
 }
 
 function escapeHtml(text) {
-    return String(text).replace(/[&<>"]|'/g, m => ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'})[m]);
+    return String(text).replace(/[&<>"']/g, m => ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'})[m]);
 }
 
 function removerAcentos(texto) {
@@ -174,6 +196,217 @@ function toggleYear(event) {
     search();
 }
 
+function toggleExportButton(show) {
+    exportPdfBtn.style.display = show ? 'block' : 'none';
+}
+
+async function generatePDF() {
+    // Mostrar loading
+    const loadingDiv = document.createElement('div');
+    loadingDiv.className = 'pdf-loading';
+    loadingDiv.innerHTML = '<div class="spinner-border spinner-border-sm me-2"></div>Gerando PDF...';
+    document.body.appendChild(loadingDiv);
+
+    try {
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        const margin = 8; // Margem reduzida para alinhar mais à esquerda
+        
+        let yPosition = margin;
+        let currentPage = 1;
+
+        // Informações da busca
+        const searchTerm = searchTermInput.value.trim();
+        const today = new Date().toLocaleDateString('pt-BR');
+        
+        // Cabeçalho do relatório - alinhado à esquerda
+        pdf.setFontSize(16);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('RELATÓRIO DE LICITAÇÕES - PMTF', margin, yPosition);
+        
+        yPosition += 8;
+        
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(`Data de geração: ${today}`, margin, yPosition);
+        yPosition += 4;
+        
+        if (searchTerm) {
+            pdf.text(`Termo(s) de busca: "${searchTerm}"`, margin, yPosition);
+            yPosition += 4;
+        }
+        
+        if (anoSelecionado) {
+            pdf.text(`Ano filtrado: ${anoSelecionado}`, margin, yPosition);
+            yPosition += 4;
+        }
+        
+        yPosition += 6;
+
+        // Linha separadora
+        pdf.setDrawColor(200, 200, 200);
+        pdf.line(margin, yPosition, pageWidth - margin, yPosition);
+        yPosition += 8;
+
+        // Larguras das colunas otimizadas para A4 (SEM a coluna Status)
+        // Ajustadas para caber melhor na página com margem menor
+        const colWidths = [20, 32, 65, 10, 12, 16, 16, 16];
+        const totalTableWidth = colWidths.reduce((sum, width) => sum + width, 0);
+        
+        // Processar cada card de resultado
+        const cards = document.querySelectorAll('#result .card');
+        
+        for (let i = 0; i < cards.length; i++) {
+            const card = cards[i];
+            const processo = card.querySelector('.card-header').textContent.replace('Processo:', '').trim();
+            const table = card.querySelector('table');
+            const allHeaders = Array.from(table.querySelectorAll('thead th')).map(th => th.textContent.trim());
+            
+            // Filtrar cabeçalhos - remover "Status"
+            const headers = allHeaders.filter(header => 
+                !header.toLowerCase().includes('status')
+            );
+            
+            const rows = table.querySelectorAll('tbody tr');
+            
+            // Verificar se precisa de nova página antes de adicionar novo processo
+            if (yPosition > pageHeight - 40) {
+                pdf.addPage();
+                currentPage++;
+                yPosition = margin;
+            }
+            
+            // Adicionar nome do processo
+            pdf.setFontSize(12);
+            pdf.setFont('helvetica', 'bold');
+            const processoText = `Processo: ${processo}`;
+            pdf.text(processoText, margin, yPosition);
+            yPosition += 6;
+            
+            // Adicionar cabeçalho da tabela
+            pdf.setFontSize(7); // Fonte menor para cabeçalhos
+            pdf.setFont('helvetica', 'bold');
+            let xPosition = margin;
+            
+            headers.forEach((header, index) => {
+                const colWidth = colWidths[index] || 25;
+                // Usar splitTextToSize para cabeçalhos também
+                const headerLines = pdf.splitTextToSize(header, colWidth - 1);
+                headerLines.forEach((line, lineIndex) => {
+                    pdf.text(line, xPosition + 0.5, yPosition + (lineIndex * 2.5));
+                });
+                xPosition += colWidth;
+            });
+            
+            yPosition += 5; // Espaço para cabeçalhos multi-linha
+            
+            // Linha sob cabeçalho
+            pdf.setDrawColor(100, 100, 100);
+            pdf.line(margin, yPosition - 1, margin + totalTableWidth, yPosition - 1);
+            yPosition += 2;
+
+            // Processar linhas da tabela
+            pdf.setFont('helvetica', 'normal');
+            pdf.setFontSize(6.5); // Fonte um pouco menor
+            
+            for (let j = 0; j < rows.length; j++) {
+                const cells = Array.from(rows[j].querySelectorAll('td'));
+                
+                // Filtrar células - remover a célula de Status (normalmente a última)
+                const filteredCells = cells.filter((cell, index) => 
+                    !allHeaders[index]?.toLowerCase().includes('status')
+                );
+                
+                let maxLinesInRow = 1;
+                
+                // Primeira passada: calcular altura necessária para a linha
+                filteredCells.forEach((cell, cellIndex) => {
+                    const colWidth = colWidths[cellIndex] || 25;
+                    const cellText = cell.textContent.trim();
+                    const lines = pdf.splitTextToSize(cellText, colWidth - 1);
+                    maxLinesInRow = Math.max(maxLinesInRow, lines.length);
+                });
+                
+                const rowHeight = maxLinesInRow * 2.3 + 0.5;
+                
+                // Verificar se precisa de nova página
+                if (yPosition + rowHeight > pageHeight - 10) {
+                    pdf.addPage();
+                    currentPage++;
+                    yPosition = margin;
+                    
+                    // Recriar cabeçalho da tabela na nova página
+                    pdf.setFontSize(7);
+                    pdf.setFont('helvetica', 'bold');
+                    xPosition = margin;
+                    
+                    headers.forEach((header, index) => {
+                        const colWidth = colWidths[index] || 25;
+                        const headerLines = pdf.splitTextToSize(header, colWidth - 1);
+                        headerLines.forEach((line, lineIndex) => {
+                            pdf.text(line, xPosition + 0.5, yPosition + (lineIndex * 2.5));
+                        });
+                        xPosition += colWidth;
+                    });
+                    
+                    yPosition += 5;
+                    pdf.line(margin, yPosition - 1, margin + totalTableWidth, yPosition - 1);
+                    yPosition += 2;
+                    pdf.setFont('helvetica', 'normal');
+                    pdf.setFontSize(6.5);
+                }
+                
+                // Segunda passada: desenhar o conteúdo das células
+                xPosition = margin;
+                
+                filteredCells.forEach((cell, cellIndex) => {
+                    const colWidth = colWidths[cellIndex] || 25;
+                    const cellText = cell.textContent.trim();
+                    const lines = pdf.splitTextToSize(cellText, colWidth - 1);
+                    
+                    // Desenhar cada linha do texto
+                    lines.forEach((line, lineIndex) => {
+                        pdf.text(line, xPosition + 0.5, yPosition + (lineIndex * 2.3));
+                    });
+                    
+                    xPosition += colWidth;
+                });
+                
+                yPosition += rowHeight;
+            }
+            
+            yPosition += 6; // Espaço entre processos
+        }
+        
+        // Adicionar rodapé com número da página em todas as páginas
+        const totalPages = pdf.internal.getNumberOfPages();
+        for (let i = 1; i <= totalPages; i++) {
+            pdf.setPage(i);
+            pdf.setFontSize(7);
+            pdf.setTextColor(128, 128, 128);
+            pdf.text(
+                `Página ${i} de ${totalPages} - Relatório gerado em ${today} por Sérgio Carneiro`,
+                pageWidth / 2,
+                pageHeight - 8,
+                { align: 'center' }
+            );
+        }
+
+        // Salvar PDF
+        const fileName = `licitacoes_pmtf_${searchTerm ? searchTerm.replace(/[^a-z0-9]/gi, '_') : 'todos'}_${new Date().toISOString().slice(0,10)}.pdf`;
+        pdf.save(fileName);
+        
+    } catch (error) {
+        console.error('Erro ao gerar PDF:', error);
+        alert('Erro ao gerar PDF. Tente novamente.');
+    } finally {
+        // Remover loading
+        document.body.removeChild(loadingDiv);
+    }
+}
+
 function search() {
     const termoOriginal = searchTermInput.value;
     const termosBusca = termoOriginal.split(',').map(t => removerAcentos(t.trim().toLowerCase())).filter(Boolean);
@@ -181,6 +414,7 @@ function search() {
 
     if (termosBusca.length === 0 && !anoSelecionado) {
         resultDiv.innerHTML = '<div class="alert alert-warning">Digite um termo ou selecione um ano para buscar.</div>';
+        toggleExportButton(false);
         return;
     }
 
@@ -199,6 +433,7 @@ function search() {
 
     if (resultados.length === 0) {
         resultDiv.innerHTML = '<div class="alert alert-info">Nada encontrado.</div>';
+        toggleExportButton(false);
         return;
     }
 
@@ -234,6 +469,8 @@ function search() {
 
     const resumoTermo = termoOriginal.trim() ? ` com o(s) termo(s) "${escapeHtml(termoOriginal)}"` : '';
     resultDiv.innerHTML += `<div class="alert alert-success mt-3">🔎 ${resultados.length} processos encontrados${anoSelecionado ? ' para o ano ' + anoSelecionado : ''}${resumoTermo}.</div>`;
+    
+    toggleExportButton(true);
 }
 
 function toggleTheme() {
@@ -247,6 +484,7 @@ yearButtonsDiv.addEventListener('click', toggleYear);
 window.addEventListener('scroll', () => { btnTopo.style.display = window.scrollY > 200 ? 'block' : 'none'; });
 btnTopo.addEventListener('click', () => { window.scrollTo({ top: 0, behavior: 'smooth' }); });
 themeToggleBtn.addEventListener('click', toggleTheme);
+exportPdfBtn.addEventListener('click', generatePDF);
 
 carregarJSON();
     </script>
