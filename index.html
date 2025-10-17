@@ -194,6 +194,7 @@ async function carregarJSON() {
         });
         const arrays = await Promise.all(responses.map(r => r.json()));
         jsonData = arrays.flat();
+        console.log('Dados carregados:', jsonData.length, 'abas');
     } catch (error) {
         resultDiv.innerHTML = `<div class="alert alert-danger">Erro ao carregar JSON: ${escapeHtml(error.message)}</div>`;
     } finally {
@@ -332,7 +333,6 @@ function linhaCorrespondeBusca(linha, termosProcessados) {
 }
 
 async function generatePDF() {
-    // [Código do generatePDF permanece igual...]
     // Mostrar loading
     const loadingDiv = document.createElement('div');
     loadingDiv.className = 'pdf-loading';
@@ -517,9 +517,15 @@ async function generatePDF() {
     }
 }
 
+// FUNÇÃO SEARCH COMPLETAMENTE CORRIGIDA
 function search() {
-    const termoOriginal = searchTermInput.value;
+    const termoOriginal = searchTermInput.value.trim();
     const termosProcessados = processarTermosBusca(termoOriginal);
+    
+    console.log('Termo original:', termoOriginal);
+    console.log('Termos processados:', termosProcessados);
+    console.log('Ano selecionado:', anoSelecionado);
+    
     resultDiv.innerHTML = '';
 
     if (termosProcessados.length === 0 && !anoSelecionado) {
@@ -529,22 +535,52 @@ function search() {
     }
 
     const resultados = [];
+    
     jsonData.forEach(aba => {
-        if (anoSelecionado && !String(aba.aba).includes(anoSelecionado)) return;
+        console.log('Processando aba:', aba.aba);
+        
+        // Primeiro: busca pelas correspondências independente do ano
         const correspondencias = aba.linhas.filter(linha => 
             linhaCorrespondeBusca(linha, termosProcessados)
         );
+        
+        console.log('Correspondências encontradas:', correspondencias.length);
+        
+        // Segundo: se encontrou correspondências, verifica o filtro de ano
         if (correspondencias.length > 0) {
-            resultados.push({ aba: aba.aba, colunas: aba.colunas, resultados: correspondencias });
+            // Se não há ano selecionado OU se a aba corresponde ao ano selecionado
+            const anoAba = String(aba.aba);
+            const correspondeAno = !anoSelecionado || anoAba.includes(anoSelecionado);
+            
+            console.log('Aba corresponde ao ano?', correspondeAno, 'Ano aba:', anoAba);
+            
+            if (correspondeAno) {
+                resultados.push({ 
+                    aba: aba.aba, 
+                    colunas: aba.colunas, 
+                    resultados: correspondencias 
+                });
+            }
         }
     });
 
+    console.log('Total de resultados:', resultados.length);
+
     if (resultados.length === 0) {
-        resultDiv.innerHTML = '<div class="alert alert-info">Nada encontrado.</div>';
+        let mensagem = 'Nada encontrado.';
+        if (anoSelecionado && termoOriginal) {
+            mensagem = `Nada encontrado para "${escapeHtml(termoOriginal)}" no ano ${anoSelecionado}. Tente sem o filtro de ano.`;
+        } else if (anoSelecionado) {
+            mensagem = `Nada encontrado para o ano ${anoSelecionado}.`;
+        } else if (termoOriginal) {
+            mensagem = `Nada encontrado para "${escapeHtml(termoOriginal)}".`;
+        }
+        resultDiv.innerHTML = `<div class="alert alert-info">${mensagem}</div>`;
         toggleExportButton(false);
         return;
     }
 
+    // Renderizar resultados
     resultados.forEach((item, index) => {
         const nomeAbaFormatado = escapeHtml(String(item.aba).split('_').slice(0, 2).join('_'));
         let cardHTML = `
@@ -553,7 +589,7 @@ function search() {
                 <div class="card-body">
                     <div class="table-responsive">
                         <table class="table table-bordered table-hover">
-                            <thead><tr>${item.colunas.map(col => `<th>${escapeHtml(col)}</th>`).join('')}</tr></thead>
+                            <thead><tr>${item.colunas.map(col => `<th>${escapeHtml(String(col))}</th>`).join('')}</tr></thead>
                             <tbody>`;
         
         item.resultados.forEach((res, resIndex) => {
@@ -561,7 +597,8 @@ function search() {
             const rowClass = isLastRow ? '' : 'specification-row';
             
             cardHTML += `<tr class="${rowClass}">` + res.map((dado, i) => {
-                const coluna = item.colunas[i] ? item.colunas[i].toLowerCase() : '';
+                // CORREÇÃO: Verificar se a coluna existe e converter para string
+                const coluna = item.colunas[i] ? String(item.colunas[i]).toLowerCase() : '';
                 let dadoFormatado = String(dado);
 
                 if (coluna.includes('vl. unit') || coluna.includes('vl. total')) {
@@ -585,8 +622,9 @@ function search() {
         resultDiv.innerHTML += cardHTML;
     });
 
-    const resumoTermo = termoOriginal.trim() ? ` com o(s) termo(s) "${escapeHtml(termoOriginal)}"` : '';
-    resultDiv.innerHTML += `<div class="alert alert-success mt-3">🔎 ${resultados.length} processos encontrados${anoSelecionado ? ' para o ano ' + anoSelecionado : ''}${resumoTermo}.</div>`;
+    const resumoTermo = termoOriginal ? ` com o(s) termo(s) "${escapeHtml(termoOriginal)}"` : '';
+    const resumoAno = anoSelecionado ? ` para o ano ${anoSelecionado}` : '';
+    resultDiv.innerHTML += `<div class="alert alert-success mt-3">🔎 ${resultados.length} processos encontrados${resumoAno}${resumoTermo}.</div>`;
     
     toggleExportButton(true);
 }
