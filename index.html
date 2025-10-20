@@ -300,7 +300,6 @@ let jsonData = [];
 let anoSelecionado = '';
 let lastFetchTime = 0;
 let cachedData = null;
-let searchTimeout;
 
 // Referências aos elementos DOM
 const searchTermInput = document.getElementById('searchTerm');
@@ -385,7 +384,7 @@ async function carregarJSON() {
         lastFetchTime = now;
         
         console.log('✅ Dados carregados com sucesso:', jsonData.length, 'abas');
-        resultDiv.innerHTML = '<div class="alert alert-success fade-in">✅ Dados carregados! Digite um termo para buscar.</div>';
+        resultDiv.innerHTML = '<div class="alert alert-success fade-in">✅ Dados carregados! Digite um termo e clique em Buscar.</div>';
         
     } catch (error) {
         console.error('Erro ao carregar dados:', error);
@@ -850,29 +849,15 @@ function toggleTheme() {
     }
 }
 
-// Event Listeners com debounce
-searchTermInput.addEventListener('input', (e) => {
-    clearTimeout(searchTimeout);
-    searchTimeout = setTimeout(() => {
-        if (e.target.value.trim().length >= 2 || e.target.value.trim().length === 0) {
-            search();
-        }
-    }, 500); // 500ms de delay
-});
-
+// Event Listeners - SEM busca automática
 searchTermInput.addEventListener('keydown', e => { 
     if (e.key === 'Enter') { 
         e.preventDefault(); 
-        clearTimeout(searchTimeout);
         search(); 
     } 
 });
 
-searchButton.addEventListener('click', () => {
-    clearTimeout(searchTimeout);
-    search();
-});
-
+searchButton.addEventListener('click', search);
 yearButtonsDiv.addEventListener('click', toggleYear);
 window.addEventListener('scroll', () => { 
     btnTopo.style.display = window.scrollY > 200 ? 'block' : 'none'; 
