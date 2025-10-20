@@ -445,7 +445,7 @@ function processarTermosBusca(termoOriginal) {
     return termos.filter(termo => termo.valor.length > 0);
 }
 
-// MELHORIA: Highlight otimizado
+// CORREÇÃO CRÍTICA: Highlight que funciona com acentos
 function highlightTerm(text, termoOriginal) {
     const originalText = String(text);
     if (!termoOriginal) return escapeHtml(originalText);
@@ -454,28 +454,42 @@ function highlightTerm(text, termoOriginal) {
     if (termosProcessados.length === 0) return escapeHtml(originalText);
 
     let resultadoFinal = escapeHtml(originalText);
-    const textoNormalizado = removerAcentos(originalText.toLowerCase());
-
-    // Agrupar termos por tipo para evitar replaces desnecessários
-    const termosExatos = termosProcessados.filter(t => t.tipo === 'exato').map(t => t.valor);
-    const termosParciais = termosProcessados.filter(t => t.tipo === 'parcial').flatMap(t => 
-        t.valor.split(/\s+/).filter(p => p.length > 0)
-    );
-
-    // Aplicar highlights de exatos primeiro
-    termosExatos.forEach(termo => {
-        const regex = new RegExp(`(${termo.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-        resultadoFinal = resultadoFinal.replace(regex, '<mark>$1</mark>');
-    });
-
-    // Aplicar highlights parciais (evitando sobreposição)
-    termosParciais.forEach(palavra => {
-        // Não destacar se já está dentro de uma marcação mark
-        const regex = new RegExp(`(?![^<]*>)\\b(${palavra.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})\\b`, 'gi');
-        resultadoFinal = resultadoFinal.replace(regex, '<mark>$1</mark>');
+    
+    // Para cada termo processado, criar versões com e sem acento
+    termosProcessados.forEach(termo => {
+        const termoSemAcento = termo.valor;
+        const textoNormalizado = removerAcentos(resultadoFinal.toLowerCase());
+        
+        if (termo.tipo === 'exato') {
+            // Busca exata - encontrar a posição exata no texto normalizado
+            const index = textoNormalizado.indexOf(termoSemAcento);
+            if (index !== -1) {
+                // Encontrar o texto original correspondente
+                const textoOriginal = resultadoFinal.substring(index, index + termoSemAcento.length);
+                const regex = new RegExp(escapeRegex(textoOriginal), 'gi');
+                resultadoFinal = resultadoFinal.replace(regex, '<mark>$&</mark>');
+            }
+        } else {
+            // Busca parcial - para cada palavra
+            const palavras = termoSemAcento.split(/\s+/).filter(p => p.length > 0);
+            palavras.forEach(palavra => {
+                const index = textoNormalizado.indexOf(palavra);
+                if (index !== -1) {
+                    // Encontrar a palavra original correspondente
+                    const palavraOriginal = resultadoFinal.substring(index, index + palavra.length);
+                    const regex = new RegExp(`\\b${escapeRegex(palavraOriginal)}\\b`, 'gi');
+                    resultadoFinal = resultadoFinal.replace(regex, '<mark>$&</mark>');
+                }
+            });
+        }
     });
 
     return resultadoFinal;
+}
+
+// Função auxiliar para escapar caracteres especiais do regex
+function escapeRegex(text) {
+    return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function formatStatus(status) {
