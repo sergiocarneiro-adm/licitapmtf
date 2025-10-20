@@ -401,51 +401,62 @@ async function carregarJSON() {
     }
 }
 
-// FUNÇÃO CORRIGIDA: Processar termos de busca com suporte a aspas E vírgulas
+// CORREÇÃO CRÍTICA: Nova função de processamento de busca
 function processarTermosBusca(termoOriginal) {
     const termos = [];
-    let termoAtual = '';
-    let dentroDeAspas = false;
     
-    for (let i = 0; i < termoOriginal.length; i++) {
-        const char = termoOriginal[i];
+    // Se o termo contém vírgulas, tratar como múltiplos termos OR
+    if (termoOriginal.includes(',') && !termoOriginal.includes('"')) {
+        const termosSeparados = termoOriginal.split(',').map(t => t.trim()).filter(t => t.length > 0);
+        termosSeparados.forEach(termo => {
+            termos.push({
+                tipo: 'frase', // Agora trata como frase completa
+                valor: removerAcentos(termo.toLowerCase())
+            });
+        });
+    } 
+    // Se contém aspas, processar como antes
+    else if (termoOriginal.includes('"')) {
+        let termoAtual = '';
+        let dentroDeAspas = false;
         
-        if (char === '"') {
-            if (dentroDeAspas && termoAtual.trim()) {
-                // Fechar aspas - adicionar como termo exato
-                termos.push({
-                    tipo: 'exato',
-                    valor: removerAcentos(termoAtual.trim().toLowerCase())
-                });
-                termoAtual = '';
+        for (let i = 0; i < termoOriginal.length; i++) {
+            const char = termoOriginal[i];
+            
+            if (char === '"') {
+                if (dentroDeAspas && termoAtual.trim()) {
+                    termos.push({
+                        tipo: 'exato',
+                        valor: removerAcentos(termoAtual.trim().toLowerCase())
+                    });
+                    termoAtual = '';
+                }
+                dentroDeAspas = !dentroDeAspas;
+            } else {
+                termoAtual += char;
             }
-            dentroDeAspas = !dentroDeAspas;
-        } else if (char === ',' && !dentroDeAspas) {
-            // Vírgula fora de aspas - separador de termos
-            if (termoAtual.trim()) {
-                termos.push({
-                    tipo: 'parcial',
-                    valor: removerAcentos(termoAtual.trim().toLowerCase())
-                });
-            }
-            termoAtual = '';
-        } else {
-            termoAtual += char;
+        }
+        
+        // Adicionar último termo se houver
+        if (termoAtual.trim() && !dentroDeAspas) {
+            termos.push({
+                tipo: 'frase',
+                valor: removerAcentos(termoAtual.trim().toLowerCase())
+            });
         }
     }
-    
-    // Adicionar último termo
-    if (termoAtual.trim()) {
+    // Caso padrão: tratar como uma única frase
+    else {
         termos.push({
-            tipo: dentroDeAspas ? 'exato' : 'parcial',
-            valor: removerAcentos(termoAtual.trim().toLowerCase())
+            tipo: 'frase',
+            valor: removerAcentos(termoOriginal.toLowerCase())
         });
     }
     
     return termos.filter(termo => termo.valor.length > 0);
 }
 
-// CORREÇÃO CRÍTICA: Highlight que funciona com acentos
+// CORREÇÃO: Highlight otimizado para frases completas
 function highlightTerm(text, termoOriginal) {
     const originalText = String(text);
     if (!termoOriginal) return escapeHtml(originalText);
@@ -454,33 +465,27 @@ function highlightTerm(text, termoOriginal) {
     if (termosProcessados.length === 0) return escapeHtml(originalText);
 
     let resultadoFinal = escapeHtml(originalText);
-    
-    // Para cada termo processado, criar versões com e sem acento
+    const textoNormalizado = removerAcentos(originalText.toLowerCase());
+
+    // Processar cada termo
     termosProcessados.forEach(termo => {
         const termoSemAcento = termo.valor;
-        const textoNormalizado = removerAcentos(resultadoFinal.toLowerCase());
         
-        if (termo.tipo === 'exato') {
-            // Busca exata - encontrar a posição exata no texto normalizado
-            const index = textoNormalizado.indexOf(termoSemAcento);
-            if (index !== -1) {
+        if (termo.tipo === 'exato' || termo.tipo === 'frase') {
+            // Busca por frase completa - encontrar todas as ocorrências
+            let index = -1;
+            while ((index = textoNormalizado.indexOf(termoSemAcento, index + 1)) !== -1) {
                 // Encontrar o texto original correspondente
                 const textoOriginal = resultadoFinal.substring(index, index + termoSemAcento.length);
-                const regex = new RegExp(escapeRegex(textoOriginal), 'gi');
-                resultadoFinal = resultadoFinal.replace(regex, '<mark>$&</mark>');
+                // Substituir apenas essa ocorrência específica
+                resultadoFinal = resultadoFinal.substring(0, index) + 
+                               '<mark>' + textoOriginal + '</mark>' + 
+                               resultadoFinal.substring(index + termoSemAcento.length);
+                // Atualizar o texto normalizado para refletir a mudança
+                textoNormalizado = removerAcentos(resultadoFinal.toLowerCase());
+                // Ajustar o índice para pular o markup adicionado
+                index += '<mark></mark>'.length - 1;
             }
-        } else {
-            // Busca parcial - para cada palavra
-            const palavras = termoSemAcento.split(/\s+/).filter(p => p.length > 0);
-            palavras.forEach(palavra => {
-                const index = textoNormalizado.indexOf(palavra);
-                if (index !== -1) {
-                    // Encontrar a palavra original correspondente
-                    const palavraOriginal = resultadoFinal.substring(index, index + palavra.length);
-                    const regex = new RegExp(`\\b${escapeRegex(palavraOriginal)}\\b`, 'gi');
-                    resultadoFinal = resultadoFinal.replace(regex, '<mark>$&</mark>');
-                }
-            });
         }
     });
 
@@ -518,23 +523,16 @@ function toggleExportButton(show) {
     exportPdfBtn.style.display = show ? 'block' : 'none';
 }
 
-// FUNÇÃO CORRIGIDA: Verificar se linha corresponde aos termos de busca
+// CORREÇÃO CRÍTICA: Busca otimizada para frases completas
 function linhaCorrespondeBusca(linha, termosProcessados) {
     if (termosProcessados.length === 0) return true;
     
     const textoLinha = removerAcentos(linha.join(' ').toLowerCase());
     
     // Para busca com múltiplos termos (separados por vírgula), usar lógica OR
-    // Ou seja, a linha deve conter PELO MENOS UM dos termos
     return termosProcessados.some(termo => {
-        if (termo.tipo === 'exato') {
-            // Busca exata - deve conter a frase completa
-            return textoLinha.includes(termo.valor);
-        } else {
-            // Busca parcial - deve conter pelo menos uma palavra
-            const palavras = termo.valor.split(/\s+/).filter(p => p.length > 0);
-            return palavras.some(palavra => textoLinha.includes(palavra));
-        }
+        // Ambos 'exato' e 'frase' agora buscam a frase completa
+        return textoLinha.includes(termo.valor);
     });
 }
 
@@ -742,7 +740,7 @@ async function generatePDF() {
     }
 }
 
-// FUNÇÃO SEARCH COMPLETAMENTE CORRIGIDA
+// FUNÇÃO SEARCH OTIMIZADA
 function search() {
     const termoOriginal = searchTermInput.value.trim();
     const termosProcessados = processarTermosBusca(termoOriginal);
@@ -765,14 +763,12 @@ function search() {
     const resultados = [];
     
     jsonData.forEach(aba => {
-        // Primeiro: busca pelas correspondências independente do ano
+        // Busca otimizada - apenas uma verificação por termo
         const correspondencias = aba.linhas.filter(linha => 
             linhaCorrespondeBusca(linha, termosProcessados)
         );
         
-        // Segundo: se encontrou correspondências, verifica o filtro de ano
         if (correspondencias.length > 0) {
-            // Se não há ano selecionado OU se a aba corresponde ao ano selecionado
             const anoAba = String(aba.aba);
             const correspondeAno = !anoSelecionado || anoAba.includes(anoSelecionado);
             
@@ -819,7 +815,6 @@ function search() {
             const rowClass = isLastRow ? '' : 'specification-row';
             
             cardHTML += `<tr class="${rowClass}">` + res.map((dado, i) => {
-                // CORREÇÃO: Verificar se a coluna existe e converter para string
                 const coluna = item.colunas[i] ? String(item.colunas[i]).toLowerCase() : '';
                 let dadoFormatado = String(dado);
 
