@@ -18,13 +18,45 @@
     --text-light: #ffffff;
     --text-dark: #212529;
     --primary-color: #0d6efd;
+    --success-color: #198754;
+    --danger-color: #dc3545;
+    --warning-color: #ffc107;
+    --secondary-color: #6c757d;
 }
-body { font-family: 'Roboto', sans-serif; background-color: var(--bg-light ); padding-top: 70px; transition: background-color 0.3s ease, color 0.3s ease; color: var(--text-dark); }
+
+body { 
+    font-family: 'Roboto', sans-serif; 
+    background-color: var(--bg-light); 
+    padding-top: 70px; 
+    transition: background-color 0.3s ease, color 0.3s ease; 
+    color: var(--text-dark); 
+}
 body.dark-mode { background-color: var(--bg-dark); color: var(--text-light); }
-header { position: fixed; top: 0; width: 100%; background-color: var(--primary-color); color: white; padding: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); z-index: 1050; }
+
+header { 
+    position: fixed; 
+    top: 0; 
+    width: 100%; 
+    background-color: var(--primary-color); 
+    color: white; 
+    padding: 15px; 
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1); 
+    z-index: 1050; 
+}
 header h1 { margin: 0; font-size: 1.5rem; }
+
 .container-fluid { padding: 30px 5%; max-width: 100%; }
-.card { margin-bottom: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+
+.card { 
+    margin-bottom: 20px; 
+    border-radius: 12px; 
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+}
 .card-header { background-color: var(--primary-color) !important; color: white; }
 
 /* CORREÇÃO DO LAYOUT DE BUSCA - ALINHAMENTO CORRETO */
@@ -32,7 +64,7 @@ header h1 { margin: 0; font-size: 1.5rem; }
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
-    margin-bottom: 30px; /* Aumentei a margem inferior para dar espaço à dica */
+    margin-bottom: 30px;
     align-items: center;
     position: relative;
 }
@@ -68,9 +100,41 @@ table { width: 100%; margin-top: 10px; border-collapse: collapse; }
 th, td { padding: 10px; border: 1px solid #dee2e6; vertical-align: top; }
 th { background-color: var(--primary-color); color: white; font-weight: 500; }
 mark { background-color: #ffe58f; padding: 0 2px; }
-#btnTopo { position: fixed; bottom: 30px; right: 30px; display: none; border: none; background: var(--primary-color); color: white; padding: 12px 16px; border-radius: 50%; box-shadow: 0 4px 12px rgba(13, 110, 253, 0.5); cursor: pointer; font-size: 1.5rem; z-index: 1000; }
-.theme-toggle { cursor: pointer; font-size: 1.3rem; }
-.footer-watermark { position: fixed; bottom: 5px; left: 50%; transform: translateX(-50%); font-size: 0.85rem; color: rgba(0, 0, 0, 0.5); z-index: 999; pointer-events: none; user-select: none; }
+
+#btnTopo { 
+    position: fixed; 
+    bottom: 30px; 
+    right: 30px; 
+    display: none; 
+    border: none; 
+    background: var(--primary-color); 
+    color: white; 
+    padding: 12px 16px; 
+    border-radius: 50%; 
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.5); 
+    cursor: pointer; 
+    font-size: 1.5rem; 
+    z-index: 1000; 
+    transition: transform 0.2s ease;
+}
+#btnTopo:hover {
+    transform: scale(1.1);
+}
+
+.theme-toggle { cursor: pointer; font-size: 1.3rem; transition: transform 0.2s ease; }
+.theme-toggle:hover { transform: scale(1.1); }
+
+.footer-watermark { 
+    position: fixed; 
+    bottom: 5px; 
+    left: 50%; 
+    transform: translateX(-50%); 
+    font-size: 0.85rem; 
+    color: rgba(0, 0, 0, 0.5); 
+    z-index: 999; 
+    pointer-events: none; 
+    user-select: none; 
+}
 body.dark-mode .footer-watermark { color: rgba(255, 255, 255, 0.3); }
 
 /* NOVOS ESTILOS: Linhas separadoras */
@@ -112,6 +176,61 @@ body.dark-mode .specification-row {
     align-items: center;
     gap: 10px;
 }
+
+/* Melhorias de responsividade */
+@media (max-width: 768px) {
+    .container-fluid {
+        padding: 20px 15px;
+    }
+    
+    .search-box {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .search-input-container {
+        min-width: 100%;
+    }
+    
+    .controls-container {
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .btn-group {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .btn-group .btn {
+        flex: 1;
+        min-width: 60px;
+    }
+    
+    header h1 {
+        font-size: 1.2rem;
+    }
+    
+    body {
+        padding-top: 60px;
+    }
+}
+
+/* Animações suaves */
+.fade-in {
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Status badges melhorados */
+.badge {
+    font-size: 0.75em;
+    padding: 4px 8px;
+}
     </style>
 </head>
 <body>
@@ -127,10 +246,10 @@ body.dark-mode .specification-row {
 
     <div class="container-fluid">
         <!-- LAYOUT CORRIGIDO - ALINHAMENTO PERFEITO -->
-        <div class="search-box">
+        <div class="search-box" role="search" aria-label="Busca em licitações">
             <div class="search-input-container">
-                <input type="text" id="searchTerm" class="form-control" placeholder="Ex: agua mineral, teclado, morfina" aria-label="Termo de busca" />
-                <div class="search-hint">💡 Dica: Use "aspas" para busca exata. Ex: "agua destilada"</div>
+                <input type="text" id="searchTerm" class="form-control" placeholder="Ex: agua mineral, teclado, morfina" aria-label="Termo de busca" aria-describedby="searchHint" />
+                <div id="searchHint" class="search-hint">💡 Dica: Use "aspas" para busca exata. Ex: "agua destilada"</div>
             </div>
             
             <div class="controls-container">
@@ -152,13 +271,14 @@ body.dark-mode .specification-row {
             </div>
         </div>
 
-        <div id="spinner" class="text-center" style="display:none;">
+        <div id="spinner" class="text-center" style="display:none;" aria-live="polite" aria-label="Carregando resultados">
             <div class="spinner-border text-primary" role="status">
                 <span class="visually-hidden">Carregando...</span>
             </div>
+            <div class="mt-2">Carregando dados...</div>
         </div>
 
-        <div id="result">Resultados aparecerão aqui...</div>
+        <div id="result" aria-live="polite" aria-atomic="true">Resultados aparecerão aqui...</div>
     </div>
 
     <button id="btnTopo" title="Voltar ao topo" aria-label="Voltar ao topo">↑</button>
@@ -168,12 +288,19 @@ body.dark-mode .specification-row {
     </footer>
 
     <script>
+// Configurações
 const jsonUrls = [
     'https://sergiocarneiro-adm.github.io/licitapmtf/dados_planilha.json',
     'https://sergiocarneiro-adm.github.io/licitapmtf/dados_dispensas.json'
 ];
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
+
+// Estado da aplicação
 let jsonData = [];
 let anoSelecionado = '';
+let lastFetchTime = 0;
+let cachedData = null;
+let searchTimeout;
 
 // Referências aos elementos DOM
 const searchTermInput = document.getElementById('searchTerm');
@@ -185,23 +312,7 @@ const btnTopo = document.getElementById('btnTopo');
 const themeToggleBtn = document.querySelector('.theme-toggle');
 const exportPdfBtn = document.getElementById('exportPdf');
 
-async function carregarJSON() {
-    spinnerDiv.style.display = 'block';
-    try {
-        const responses = await Promise.all(jsonUrls.map(url => fetch(url)));
-        responses.forEach((res, i) => {
-            if (!res.ok) throw new Error(`Erro no arquivo ${i+1}: HTTP ${res.status}`);
-        });
-        const arrays = await Promise.all(responses.map(r => r.json()));
-        jsonData = arrays.flat();
-        console.log('Dados carregados:', jsonData.length, 'abas');
-    } catch (error) {
-        resultDiv.innerHTML = `<div class="alert alert-danger">Erro ao carregar JSON: ${escapeHtml(error.message)}</div>`;
-    } finally {
-        spinnerDiv.style.display = 'none';
-    }
-}
-
+// Funções utilitárias
 function escapeHtml(text) {
     return String(text).replace(/[&<>"']/g, m => ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'})[m]);
 }
@@ -209,6 +320,86 @@ function escapeHtml(text) {
 function removerAcentos(texto) {
     if (!texto) return "";
     return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+function handleError(error, context) {
+    console.error(`Erro em ${context}:`, error);
+    
+    const errorMessages = {
+        'NetworkError': 'Erro de conexão. Verifique sua internet.',
+        'TypeError': 'Erro ao processar os dados.',
+        'AbortError': 'A requisição foi cancelada por timeout.'
+    };
+    
+    const message = errorMessages[error.name] || error.message;
+    
+    resultDiv.innerHTML = `
+        <div class="alert alert-danger fade-in">
+            <strong>❌ Erro em ${context}:</strong> ${escapeHtml(message)}
+            <button class="btn btn-sm btn-outline-danger ms-2" onclick="carregarJSON()">
+                Tentar Novamente
+            </button>
+        </div>
+    `;
+}
+
+// Função principal de carregamento de dados com cache
+async function carregarJSON() {
+    const now = Date.now();
+    
+    // Usar cache se disponível e recente
+    if (cachedData && (now - lastFetchTime) < CACHE_DURATION) {
+        jsonData = cachedData;
+        console.log('📦 Dados carregados do cache:', jsonData.length, 'abas');
+        return;
+    }
+    
+    spinnerDiv.style.display = 'block';
+    resultDiv.innerHTML = '<div class="alert alert-info">Carregando dados atualizados...</div>';
+    
+    try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+        
+        const responses = await Promise.all(
+            jsonUrls.map(url => fetch(url, { 
+                signal: controller.signal,
+                cache: 'force-cache',
+                headers: {
+                    'Cache-Control': 'max-age=300'
+                }
+            }))
+        );
+        
+        clearTimeout(timeoutId);
+        
+        // Verificar status das respostas
+        const invalidResponses = responses.filter(res => !res.ok);
+        if (invalidResponses.length > 0) {
+            throw new Error(`Erro HTTP: ${invalidResponses.map(r => r.status).join(', ')}`);
+        }
+        
+        const arrays = await Promise.all(responses.map(r => r.json()));
+        jsonData = arrays.flat();
+        cachedData = jsonData;
+        lastFetchTime = now;
+        
+        console.log('✅ Dados carregados com sucesso:', jsonData.length, 'abas');
+        resultDiv.innerHTML = '<div class="alert alert-success fade-in">✅ Dados carregados! Digite um termo para buscar.</div>';
+        
+    } catch (error) {
+        console.error('Erro ao carregar dados:', error);
+        
+        // Tentar usar cache mesmo com erro
+        if (cachedData) {
+            jsonData = cachedData;
+            resultDiv.innerHTML = `<div class="alert alert-warning fade-in">⚠️ Usando dados em cache: ${escapeHtml(error.message)}</div>`;
+        } else {
+            handleError(error, 'carregarJSON');
+        }
+    } finally {
+        spinnerDiv.style.display = 'none';
+    }
 }
 
 // FUNÇÃO CORRIGIDA: Processar termos de busca com suporte a aspas E vírgulas
@@ -255,6 +446,7 @@ function processarTermosBusca(termoOriginal) {
     return termos.filter(termo => termo.valor.length > 0);
 }
 
+// MELHORIA: Highlight otimizado
 function highlightTerm(text, termoOriginal) {
     const originalText = String(text);
     if (!termoOriginal) return escapeHtml(originalText);
@@ -265,22 +457,23 @@ function highlightTerm(text, termoOriginal) {
     let resultadoFinal = escapeHtml(originalText);
     const textoNormalizado = removerAcentos(originalText.toLowerCase());
 
-    // Aplicar os highlights na ordem inversa para evitar sobreposição
-    termosProcessados.slice().reverse().forEach(termo => {
-        const valorEscapado = termo.valor.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        
-        if (termo.tipo === 'exato') {
-            // Busca exata - apenas frases completas
-            const regex = new RegExp(`(${valorEscapado})`, 'gi');
-            resultadoFinal = resultadoFinal.replace(regex, '<mark>$1</mark>');
-        } else {
-            // Busca parcial - palavras individuais
-            const palavras = termo.valor.split(/\s+/).filter(p => p.length > 0);
-            palavras.forEach(palavra => {
-                const regexPalavra = new RegExp(`(${palavra})`, 'gi');
-                resultadoFinal = resultadoFinal.replace(regexPalavra, '<mark>$1</mark>');
-            });
-        }
+    // Agrupar termos por tipo para evitar replaces desnecessários
+    const termosExatos = termosProcessados.filter(t => t.tipo === 'exato').map(t => t.valor);
+    const termosParciais = termosProcessados.filter(t => t.tipo === 'parcial').flatMap(t => 
+        t.valor.split(/\s+/).filter(p => p.length > 0)
+    );
+
+    // Aplicar highlights de exatos primeiro
+    termosExatos.forEach(termo => {
+        const regex = new RegExp(`(${termo.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+        resultadoFinal = resultadoFinal.replace(regex, '<mark>$1</mark>');
+    });
+
+    // Aplicar highlights parciais (evitando sobreposição)
+    termosParciais.forEach(palavra => {
+        // Não destacar se já está dentro de uma marcação mark
+        const regex = new RegExp(`(?![^<]*>)\\b(${palavra.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})\\b`, 'gi');
+        resultadoFinal = resultadoFinal.replace(regex, '<mark>$1</mark>');
     });
 
     return resultadoFinal;
@@ -332,11 +525,15 @@ function linhaCorrespondeBusca(linha, termosProcessados) {
     });
 }
 
+// MELHORIA: PDF com progresso
 async function generatePDF() {
     // Mostrar loading
     const loadingDiv = document.createElement('div');
     loadingDiv.className = 'pdf-loading';
-    loadingDiv.innerHTML = '<div class="spinner-border spinner-border-sm me-2"></div>Gerando PDF...';
+    loadingDiv.innerHTML = `
+        <div class="spinner-border spinner-border-sm me-2"></div>
+        <span id="pdfProgress">Preparando PDF...</span>
+    `;
     document.body.appendChild(loadingDiv);
 
     try {
@@ -352,6 +549,18 @@ async function generatePDF() {
         const searchTerm = searchTermInput.value.trim();
         const today = new Date().toLocaleDateString('pt-BR');
         
+        // Atualizar progresso
+        const progressSpan = document.getElementById('pdfProgress');
+        const cards = document.querySelectorAll('#result .card');
+        const totalCards = cards.length;
+        let processedCards = 0;
+
+        const updateProgress = () => {
+            processedCards++;
+            const percent = Math.round((processedCards / totalCards) * 100);
+            progressSpan.textContent = `Gerando PDF... ${percent}%`;
+        };
+
         pdf.setFontSize(16);
         pdf.setFont('helvetica', 'bold');
         pdf.text('RELATÓRIO DE LICITAÇÕES - PMTF', margin, yPosition);
@@ -381,8 +590,6 @@ async function generatePDF() {
 
         const colWidths = [20, 32, 65, 10, 12, 16, 16, 16];
         const totalTableWidth = colWidths.reduce((sum, width) => sum + width, 0);
-        
-        const cards = document.querySelectorAll('#result .card');
         
         for (let i = 0; i < cards.length; i++) {
             const card = cards[i];
@@ -491,6 +698,10 @@ async function generatePDF() {
             }
             
             yPosition += 6;
+            updateProgress();
+            
+            // Yield para UI não travar
+            await new Promise(resolve => setTimeout(resolve, 0));
         }
         
         const totalPages = pdf.internal.getNumberOfPages();
@@ -510,10 +721,11 @@ async function generatePDF() {
         pdf.save(fileName);
         
     } catch (error) {
-        console.error('Erro ao gerar PDF:', error);
-        alert('Erro ao gerar PDF. Tente novamente.');
+        handleError(error, 'generatePDF');
     } finally {
-        document.body.removeChild(loadingDiv);
+        if (document.body.contains(loadingDiv)) {
+            document.body.removeChild(loadingDiv);
+        }
     }
 }
 
@@ -522,14 +734,17 @@ function search() {
     const termoOriginal = searchTermInput.value.trim();
     const termosProcessados = processarTermosBusca(termoOriginal);
     
-    console.log('Termo original:', termoOriginal);
-    console.log('Termos processados:', termosProcessados);
-    console.log('Ano selecionado:', anoSelecionado);
+    console.log('🔍 Busca:', {
+        termoOriginal,
+        termosProcessados,
+        anoSelecionado,
+        totalAbas: jsonData.length
+    });
     
     resultDiv.innerHTML = '';
 
     if (termosProcessados.length === 0 && !anoSelecionado) {
-        resultDiv.innerHTML = '<div class="alert alert-warning">Digite um termo ou selecione um ano para buscar.</div>';
+        resultDiv.innerHTML = '<div class="alert alert-warning fade-in">Digite um termo ou selecione um ano para buscar.</div>';
         toggleExportButton(false);
         return;
     }
@@ -537,22 +752,16 @@ function search() {
     const resultados = [];
     
     jsonData.forEach(aba => {
-        console.log('Processando aba:', aba.aba);
-        
         // Primeiro: busca pelas correspondências independente do ano
         const correspondencias = aba.linhas.filter(linha => 
             linhaCorrespondeBusca(linha, termosProcessados)
         );
-        
-        console.log('Correspondências encontradas:', correspondencias.length);
         
         // Segundo: se encontrou correspondências, verifica o filtro de ano
         if (correspondencias.length > 0) {
             // Se não há ano selecionado OU se a aba corresponde ao ano selecionado
             const anoAba = String(aba.aba);
             const correspondeAno = !anoSelecionado || anoAba.includes(anoSelecionado);
-            
-            console.log('Aba corresponde ao ano?', correspondeAno, 'Ano aba:', anoAba);
             
             if (correspondeAno) {
                 resultados.push({ 
@@ -564,7 +773,7 @@ function search() {
         }
     });
 
-    console.log('Total de resultados:', resultados.length);
+    console.log('📊 Resultados encontrados:', resultados.length);
 
     if (resultados.length === 0) {
         let mensagem = 'Nada encontrado.';
@@ -575,7 +784,7 @@ function search() {
         } else if (termoOriginal) {
             mensagem = `Nada encontrado para "${escapeHtml(termoOriginal)}".`;
         }
-        resultDiv.innerHTML = `<div class="alert alert-info">${mensagem}</div>`;
+        resultDiv.innerHTML = `<div class="alert alert-info fade-in">${mensagem}</div>`;
         toggleExportButton(false);
         return;
     }
@@ -584,7 +793,7 @@ function search() {
     resultados.forEach((item, index) => {
         const nomeAbaFormatado = escapeHtml(String(item.aba).split('_').slice(0, 2).join('_'));
         let cardHTML = `
-            <div class="card">
+            <div class="card fade-in">
                 <div class="card-header bg-primary text-white"><strong>Processo:</strong> ${nomeAbaFormatado}</div>
                 <div class="card-body">
                     <div class="table-responsive">
@@ -624,25 +833,60 @@ function search() {
 
     const resumoTermo = termoOriginal ? ` com o(s) termo(s) "${escapeHtml(termoOriginal)}"` : '';
     const resumoAno = anoSelecionado ? ` para o ano ${anoSelecionado}` : '';
-    resultDiv.innerHTML += `<div class="alert alert-success mt-3">🔎 ${resultados.length} processos encontrados${resumoAno}${resumoTermo}.</div>`;
+    resultDiv.innerHTML += `<div class="alert alert-success mt-3 fade-in">🔎 ${resultados.length} processos encontrados${resumoAno}${resumoTermo}.</div>`;
     
     toggleExportButton(true);
 }
 
 function toggleTheme() {
     document.body.classList.toggle('dark-mode');
+    const icon = themeToggleBtn.querySelector('i');
+    if (document.body.classList.contains('dark-mode')) {
+        icon.classList.remove('bi-moon-stars-fill');
+        icon.classList.add('bi-sun-fill');
+    } else {
+        icon.classList.remove('bi-sun-fill');
+        icon.classList.add('bi-moon-stars-fill');
+    }
 }
 
-// Event Listeners
-searchTermInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); search(); } });
-searchButton.addEventListener('click', search);
+// Event Listeners com debounce
+searchTermInput.addEventListener('input', (e) => {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+        if (e.target.value.trim().length >= 2 || e.target.value.trim().length === 0) {
+            search();
+        }
+    }, 500); // 500ms de delay
+});
+
+searchTermInput.addEventListener('keydown', e => { 
+    if (e.key === 'Enter') { 
+        e.preventDefault(); 
+        clearTimeout(searchTimeout);
+        search(); 
+    } 
+});
+
+searchButton.addEventListener('click', () => {
+    clearTimeout(searchTimeout);
+    search();
+});
+
 yearButtonsDiv.addEventListener('click', toggleYear);
-window.addEventListener('scroll', () => { btnTopo.style.display = window.scrollY > 200 ? 'block' : 'none'; });
-btnTopo.addEventListener('click', () => { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+window.addEventListener('scroll', () => { 
+    btnTopo.style.display = window.scrollY > 200 ? 'block' : 'none'; 
+});
+btnTopo.addEventListener('click', () => { 
+    window.scrollTo({ top: 0, behavior: 'smooth' }); 
+});
 themeToggleBtn.addEventListener('click', toggleTheme);
 exportPdfBtn.addEventListener('click', generatePDF);
 
-carregarJSON();
+// Inicialização
+document.addEventListener('DOMContentLoaded', () => {
+    carregarJSON();
+});
     </script>
 </body>
 </html>
