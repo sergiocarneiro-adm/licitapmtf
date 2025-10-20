@@ -401,7 +401,7 @@ async function carregarJSON() {
     }
 }
 
-// FUNÇÃO SIMPLIFICADA E TESTADA: Processar termos de busca
+// FUNÇÃO CORRIGIDA: Processar termos de busca com suporte a vírgulas
 function processarTermosBusca(termoOriginal) {
     if (!termoOriginal || !termoOriginal.trim()) return [];
     
@@ -410,7 +410,7 @@ function processarTermosBusca(termoOriginal) {
     const termos = [];
     const termoLimpo = termoOriginal.trim();
     
-    // Se contém aspas, processar termos exatos
+    // Se contém aspas, processar termos exatos primeiro
     if (termoLimpo.includes('"')) {
         const matches = termoLimpo.match(/"([^"]+)"/g);
         if (matches) {
@@ -425,21 +425,44 @@ function processarTermosBusca(termoOriginal) {
             });
         }
         
-        // Adicionar o restante como termo normal
+        // Adicionar o restante como termos normais (que podem conter vírgulas)
         const resto = termoLimpo.replace(/"([^"]+)"/g, '').trim();
         if (resto) {
-            termos.push({
-                tipo: 'frase',
-                valor: removerAcentos(resto.toLowerCase())
-            });
+            // Se o resto contém vírgulas, separar em múltiplos termos
+            if (resto.includes(',')) {
+                const termosSeparados = resto.split(',').map(t => t.trim()).filter(t => t.length > 0);
+                termosSeparados.forEach(termo => {
+                    termos.push({
+                        tipo: 'frase',
+                        valor: removerAcentos(termo.toLowerCase())
+                    });
+                });
+            } else {
+                termos.push({
+                    tipo: 'frase',
+                    valor: removerAcentos(resto.toLowerCase())
+                });
+            }
         }
     } 
-    // Caso sem aspas - tratar como frase única
+    // Caso sem aspas - tratar como múltiplos termos separados por vírgula
     else {
-        termos.push({
-            tipo: 'frase',
-            valor: removerAcentos(termoLimpo.toLowerCase())
-        });
+        if (termoLimpo.includes(',')) {
+            // Múltiplos termos separados por vírgula
+            const termosSeparados = termoLimpo.split(',').map(t => t.trim()).filter(t => t.length > 0);
+            termosSeparados.forEach(termo => {
+                termos.push({
+                    tipo: 'frase',
+                    valor: removerAcentos(termo.toLowerCase())
+                });
+            });
+        } else {
+            // Termo único - tratar como frase
+            termos.push({
+                tipo: 'frase',
+                valor: removerAcentos(termoLimpo.toLowerCase())
+            });
+        }
     }
     
     console.log('📝 Termos processados:', termos);
@@ -515,7 +538,7 @@ function linhaCorrespondeBusca(linha, termosProcessados) {
     
     console.log('📄 Texto da linha normalizado:', textoLinhaNormalizado.substring(0, 100) + '...');
     
-    // Verificar se algum dos termos está presente
+    // Verificar se algum dos termos está presente (lógica OR)
     const corresponde = termosProcessados.some(termo => {
         const resultado = textoLinhaNormalizado.includes(termo.valor);
         console.log(`   🔎 "${termo.valor}" encontrado:`, resultado);
